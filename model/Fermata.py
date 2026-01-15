@@ -24,7 +24,7 @@ class Fermata:
         return self._coordY
 
     def __str__(self):
-        return f"Fermata: {self._id_fermata} {self._nome} {self.coordX} {self.coordY}"
+        return f"Fermata: {self._id_fermata} {self._nome}"
 
     def __hash__(self):
         return hash(self._id_fermata)

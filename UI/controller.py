@@ -12,13 +12,23 @@ class Controller:
 
         self._view.lst_result.controls.clear()
         self._view.lst_result.controls.append(ft.Text(f"{self._model._grafo}"))
-        for edge in self._model._grafo.edges:
-            self._view.lst_result.controls.append(ft.Text(f"{edge}"))
+        for u, v,data in self._model._grafo.edges(data = True):
+            tempo_perc = data["tempo"]
+            self._view.lst_result.controls.append(ft.Text(f"{u} -> {v}. Tempo percorrenza: {tempo_perc}"))
         self._view.update_page()
 
 
     def handleCercaRaggiungibili(self,e):
-        pass
+        id_staz_partenza = int(self._view.ddStazPartenza.value)
+        print(f"{id_staz_partenza}")
+        ris = self._model.get_raggiungibili(id_staz_partenza)
+
+        self._view.lst_result.controls.clear()
+        self._view.lst_result.controls.append(ft.Text(f"Fermate raggiungibili "
+                                                      f"da {self._model._dizionario_fermate[id_staz_partenza]}"))
+        for v in ris:
+            self._view.lst_result.controls.append(ft.Text(f"{v}"))
+        self._view.update_page()
 
     def populate_dropdown(self,dd):
         self._model.getAllFermate()

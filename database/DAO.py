@@ -88,3 +88,9 @@ class DAO():
         cursor.close()
         conn.close()
         return result[0] # La prima riga contiene la velocità letta
+
+    # se voglio non fare 100 query posso leggere tutte le velocità e salvarle in un dizionario
+    # {id_linea : velocità} e poi nel model:
+    # dizionario_velocita = DAO.readAllVelocita()
+    # for c in connessioni:
+    # velocità = dizionario_velocita[c.id_linea]

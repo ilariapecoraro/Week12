@@ -9,6 +9,15 @@ class Model:
         self._dizionario_fermate = {}
         self._grafo = None
 
+    def get_raggiungibili(self, id_staz_partenza):
+        fermata_partenza = self._dizionario_fermate[id_staz_partenza]
+
+        edges = nx.bfs_edges(self._grafo, fermata_partenza) # archi del grafo di visita da fermata_partenza
+        visited_nodes = []
+        for u, v in edges:
+            visited_nodes.append(v) # nodo a cui sono arrivato
+        return visited_nodes
+
     def getAllFermate(self):
         fermate = DAO.readAllFermate()
         self._lista_fermate = fermate
@@ -19,7 +28,8 @@ class Model:
 
 
     def creaGrafo(self):
-        self._grafo = nx.MultiDiGraph() # Posso avere più archi tra due nodi
+        #self._grafo = nx.MultiDiGraph() # Posso avere più archi tra due nodi
+        self._grafo = nx.DiGraph() # Senza archi multipli tra due nodi
         for fermata in self._lista_fermate:
             self._grafo.add_node(fermata)
         # PRIMO MODO DI AGGIUNGERE GLI ARCHI, CON 619*619 QUERY SQL
@@ -68,7 +78,10 @@ class Model:
 
             print(f"Aggiunto arco tra {u_nodo} e {v_nodo}, peso: {self._grafo[u_nodo][v_nodo]}")
         """
+
         # COSTRUISCO UN MULTI-GRAFO NEL QUALE IL PESO DEGLI ARCHI E' IL T. PERCORR.
+        #  SE POSSO AVERE PIU' ARCHI TRA DUE NODI
+        """
         listaConnessioni = DAO.readAllConnessioni()
         for c in listaConnessioni:
             u_nodo = self._dizionario_fermate[c.id_stazP]
@@ -77,10 +90,30 @@ class Model:
             punto_v = (v_nodo.coordX, v_nodo.coordY)
             distanza = geodesic(punto_u, punto_v).km
             velocita = DAO.readVelocita(c._id_linea)
-            print(f"Distanza: {distanza}, velocità: {velocita}")
             tempo_perc = distanza / velocita * 60 # Tempo percorrenza in min.
+            #lo posso fare solo se l'arco ha un attributo tempo
+            print(f"Distanza: {distanza}, velocità: {velocita}, tempo_perc: {tempo_perc}")
             self._grafo.add_edge(u_nodo, v_nodo, tempo = tempo_perc)
-            print(f"Aggiunto arco tra {u_nodo} e {v_nodo}, tempo: {self._grafo[u_nodo][v_nodo]}")
+        """
+
+        # COSTRUISCO UN GRAFO (NON MULTI) NEL QUALE IL PESO DEGLI ARCHI E' IL TEMPO PERCORSO
+        listaConnessioni = DAO.readAllConnessioni()
+        for c in listaConnessioni:
+            u_nodo = self._dizionario_fermate[c.id_stazP]
+            v_nodo = self._dizionario_fermate[c.id_stazA]
+            punto_u = (u_nodo.coordX, u_nodo.coordY)
+            punto_v = (v_nodo.coordX, v_nodo.coordY)
+            distanza = geodesic(punto_u, punto_v).km
+            velocita = DAO.readVelocita(c._id_linea)
+            tempo_perc = distanza / velocita * 60
+            print(f"Distanza: {distanza}, velocità: {velocita}, tempo_perc: {tempo_perc}")
+            if (self._grafo.has_edge(u_nodo, v_nodo)): # se l'arco c'è già
+                # verifico se il tempo di percorrenza appena calcolato è minore di
+                # di quello associato all'arco già presente, se così aggiorno
+                if self._grafo[u_nodo][v_nodo]["tempo"] > tempo_perc:
+                    self._grafo.add_edge(u_nodo, v_nodo, tempo=tempo_perc)
+            else:
+                self._grafo.add_edge(u_nodo, v_nodo, tempo=tempo_perc)
 
 
         print(self._grafo)
